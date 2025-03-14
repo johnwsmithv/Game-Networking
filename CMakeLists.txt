@@ -8,5 +8,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Wno-switch -Wno-sign-c
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3")
 
-add_executable(gameClient gameClient.cpp)
-add_executable(gameServer gameServer.cpp)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/etc
+)
+
+add_executable(gameClient src/gameClient.cpp)
+add_executable(gameServer src/gameServer.cpp)
