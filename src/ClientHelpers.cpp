@@ -1,6 +1,7 @@
 #include "ClientHelpers.hpp"
 
 #include <limits>
+#include <cctype> // std::tolower
 
 #include <nlohmann/json.hpp>
 
@@ -12,7 +13,7 @@ std::string formattedMessageToServer(const std::string& userInput) {
         toServer["Event"] = "New_Player";
 
         return toServer.dump();
-    } else if(userInput.starts_with("/moveX")) {
+    } else if(userInput.starts_with("/moveX") || userInput.starts_with("/moveY") || userInput.starts_with("/moveZ")) {
         const int idx = userInput.find_first_of(' ');
 
         if(idx == std::string::npos) {
@@ -35,13 +36,26 @@ std::string formattedMessageToServer(const std::string& userInput) {
         }
 
         if(std::to_string(moveAmt).size() != moveAmtStr.size()) {
-            // The user might have tried to overflow the input!
+            // The user might have tried to overflow the input or gave it some garbage.
             return "";
         }
 
-        toServer["Event"] = "Move_X";
+        // Since we know the input command is correct, we can just pull the direction out...
+        assert(userInput.size() >= 6);
+        const unsigned char upperDir = userInput[5];
+        const unsigned char lowerDir = std::tolower(upperDir);
+
+        // Not sure if I'm doing characters to std::string wrong, but this is the 
+        // only way to not have their decimal representation shown in the string
+        // and for a bunch of nulls to be shown in the Location key.
+        std::string event = "Move_";
+        event.push_back(upperDir);
+        toServer["Event"] = event;
         toServer["Location"] = {};
-        toServer["Location"]["x"] = moveAmt;
+
+        std::string lowerDirStr = "";
+        lowerDirStr.push_back(lowerDir);
+        toServer["Location"][lowerDirStr] = moveAmt;
 
         return toServer.dump();
     } else {

@@ -56,6 +56,18 @@ TEST(FormatMessageToServer, moveXGarbageInput) {
     EXPECT_EQ(output, "");
 }
 
+TEST(FormatMessageToServer, moveYGoodInput) {
+    const auto output = formattedMessageToServer("/moveY 25");
+
+    EXPECT_EQ(output, "{\"Event\":\"Move_Y\",\"Location\":{\"y\":25}}");
+}
+
+TEST(FormatMessageToServer, moveZGoodInput) {
+    const auto output = formattedMessageToServer("/moveZ 25");
+
+    EXPECT_EQ(output, "{\"Event\":\"Move_Z\",\"Location\":{\"z\":25}}");
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
