@@ -11,7 +11,23 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3")
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/etc
+    ${CMAKE_CURRENT_SOURCE_DIR}/etc/googletest-1.16.0/include
 )
+
+link_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/etc/googletest-1.16.0/lib
+)
+
+# Make the library a shared library since we are going to be linking against many test cases, etc
+set(GAME_NETWORKING_SRCS src/Player.cpp)
+add_library(game-networking SHARED ${GAME_NETWORKING_SRCS})
 
 add_executable(gameClient src/gameClient.cpp)
 add_executable(gameServer src/gameServer.cpp)
+
+# Link the library to the gameServer executable
+target_link_libraries(gameServer game-networking)
+
+# Testing executables
+add_executable(playerTest test/test_Player.cpp)
+target_link_libraries(playerTest gtest game-networking)
