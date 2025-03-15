@@ -22,13 +22,19 @@ link_directories(
 set(GAME_NETWORKING_SRCS src/Player.cpp)
 add_library(game-networking SHARED ${GAME_NETWORKING_SRCS})
 
+set(CLIENT_HELPERS src/ClientHelpers.cpp)
+add_library(client-helpers SHARED ${CLIENT_HELPERS})
+
 add_executable(gameClient src/gameClient.cpp)
 add_executable(gameServer src/gameServer.cpp)
 
 # Link the library to the gameServer and gameClient executable
 target_link_libraries(gameServer game-networking)
-target_link_libraries(gameClient game-networking)
+target_link_libraries(gameClient game-networking client-helpers)
 
 # Testing executables
 add_executable(playerTest test/test_Player.cpp)
 target_link_libraries(playerTest gtest game-networking)
+
+add_executable(clientHelperTest test/test_Client_Helpers.cpp)
+target_link_libraries(clientHelperTest gtest client-helpers)

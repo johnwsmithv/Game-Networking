@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Player.hpp"
+#include "ClientHelpers.hpp"
 
 using json = nlohmann::json;
 
