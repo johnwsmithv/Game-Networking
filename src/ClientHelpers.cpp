@@ -1,6 +1,6 @@
 #include "ClientHelpers.hpp"
 
-#include <limits>
+#include <limits> // std::numeric_limits, etc
 #include <cctype> // std::tolower
 
 #include <nlohmann/json.hpp>
@@ -56,6 +56,10 @@ std::string formattedMessageToServer(const std::string& userInput) {
         std::string lowerDirStr = "";
         lowerDirStr.push_back(lowerDir);
         toServer["Location"][lowerDirStr] = moveAmt;
+
+        return toServer.dump();
+    } else if(userInput.starts_with("/quit")) {
+        toServer["Event"] = "Quit";
 
         return toServer.dump();
     } else {

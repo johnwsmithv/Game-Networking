@@ -68,6 +68,16 @@ TEST(FormatMessageToServer, moveZGoodInput) {
     EXPECT_EQ(output, "{\"Event\":\"Move_Z\",\"Location\":{\"z\":25}}");
 }
 
+TEST(FormatMessageToServer, sneakyInputs) {
+    const auto outputx = formattedMessageToServer("/movex 25");
+    const auto outputy = formattedMessageToServer("/movey 25");
+    const auto outputz = formattedMessageToServer("/movez 25");
+
+    EXPECT_EQ(outputx, "");
+    EXPECT_EQ(outputy, "");
+    EXPECT_EQ(outputz, "");
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

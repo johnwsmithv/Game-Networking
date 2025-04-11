@@ -46,6 +46,18 @@ struct Server {
     std::unordered_map<std::string, Client> clients;
 };
 
+json clientToJson(const Client& client) {
+    json clientJson;
+    clientJson["UUID"] = client.uuid;
+    clientJson["Health"] = client.player.getPlayerHealth();
+    clientJson["Location"] = {};
+    clientJson["Location"]["x"] = client.player.getPlayerLocation().x;
+    clientJson["Location"]["y"] = client.player.getPlayerLocation().y;
+    clientJson["Location"]["z"] = client.player.getPlayerLocation().z;
+
+    return clientJson;
+}
+
 /**
  * @brief This is a function which is going to create a UUID for a player.
  * 
@@ -154,17 +166,38 @@ int main() {
             // We want to create them a UUID.
             client.uuid = generateUUID();
 
-            json initalJoin;
-            initalJoin["UUID"] = client.uuid;
-            initalJoin["Health"] = client.player.getPlayerHealth();
-            initalJoin["Location"] = {};
-            initalJoin["Location"]["x"] = client.player.getPlayerLocation().x;
-            initalJoin["Location"]["y"] = client.player.getPlayerLocation().y;
-            initalJoin["Location"]["z"] = client.player.getPlayerLocation().z;
+            json initalJoin = clientToJson(client);
 
             sendToClient(thisServer.serverFd, client, initalJoin.dump());
         } else {
-            std::cout << "To be implemented...\n";
+            json fromClient = json::parse(receivedMsg);
+            if(fromClient.contains("Event")) {
+                if(fromClient["Event"] == "Quit") {
+                    // This means the client ended their session, so we want to remove them from the list
+                    // of active clients
+                    
+                    // This should be true, but check to be sure...
+                    if(thisServer.clients.find(senderIp) != thisServer.clients.end()) {
+                        std::cout << "Server: Client " << senderIp << " quitting. Removed from list.\n";
+                        thisServer.clients.erase(senderIp);
+                    }
+                } else if(fromClient["Event"] == "Move_X") {
+                    client.player.updatePlayerXLocation(fromClient["Location"]["x"]);
+
+                    json updatedX = clientToJson(client);
+                    sendToClient(thisServer.serverFd, client, updatedX.dump());
+                } else if(fromClient["Event"] == "Move_Y") {
+                    client.player.updatePlayerYLocation(fromClient["Location"]["y"]);
+
+                    json updatedY = clientToJson(client);
+                    sendToClient(thisServer.serverFd, client, updatedY.dump());
+                } else if(fromClient["Event"] == "Move_Z") {
+                    client.player.updatePlayerZLocation(fromClient["Location"]["z"]);
+
+                    json updatedZ = clientToJson(client);
+                    sendToClient(thisServer.serverFd, client, updatedZ.dump());
+                }
+            }
         }
     }
 }

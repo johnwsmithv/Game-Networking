@@ -8,6 +8,7 @@
 #include <errno.h>      // For errno
 #include <unistd.h>     // STDIN_FILENO
 #include <cstring>      //memset
+#include <signal.h>     // SIGINT, SIGKILL, etc...
 
 #include <nlohmann/json.hpp>
 
@@ -45,6 +46,20 @@ void sendToServer(std::unique_ptr<Client> &client, const std::string &message) {
     sendto(client->fd, message.c_str(), message.size(), 0, (struct sockaddr *)&(client->server), sizeof(client->server));
 }
 
+void signalHandler(int signum) {
+    switch(signum) {
+        case SIGINT:
+        case SIGKILL:
+            // Since the client killed the session, we want to tell the server we're quitting
+            if(client) {
+                sendToServer(client, formattedMessageToServer("/quit"));
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 void connectToServer(std::unique_ptr<Client> &client, const std::string &ip, const int portNum) {
     client->fd = socket(PF_INET, SOCK_DGRAM, 0);
     if (client->fd < 0) {
@@ -59,6 +74,11 @@ void connectToServer(std::unique_ptr<Client> &client, const std::string &ip, con
 }
 
 int main() {
+
+    // Make sure to register the signal handler!
+    signal(SIGKILL, signalHandler);
+    signal(SIGINT, signalHandler);
+
     // TODO: Change to not be hard coded...
     constexpr int serverPort = 3000;
     const std::string serverIp = "127.0.0.1";
@@ -92,7 +112,20 @@ int main() {
             if (FD_ISSET(STDIN_FILENO, &fileDescSet)) {
                 // We want to get the clients input
                 std::getline(std::cin, clientInput);
-                sendToServer(client, clientInput);
+
+                const std::string msgToServer = formattedMessageToServer(clientInput);
+
+                if(msgToServer.empty()) {
+                    std::cout << "Client: Error. Bad input.\n";
+                    continue;
+                }
+
+                sendToServer(client, msgToServer);
+
+                if (clientInput.starts_with("/quit")) {
+                    close(client->fd);
+                    return EXIT_SUCCESS;
+                }
 
                 // Receive response from Server...
                 char buf[1024];
@@ -104,19 +137,35 @@ int main() {
                 // Always check the return value!
                 if (rlen == -1) {
                     std::cerr << "Something went wrong: " << strerror(errno) << "...\n";
+                    continue;
                 }
 
                 if (clientInput.starts_with("/newPlayer")) {
                     json initialState = json::parse(buf);
 
                     client->uuid = initialState["UUID"];
-                    client->player.updatePlayerHealth(initialState["Health"]);
+                    client->player.setPlayerHealth(initialState["Health"]);
                     client->player.updatePlayerXLocation(initialState["Location"]["x"]);
                     client->player.updatePlayerYLocation(initialState["Location"]["y"]);
                     client->player.updatePlayerZLocation(initialState["Location"]["z"]);
 
                     std::cout << "Updated player state:\n"
                               << client << "\n";
+                } else if (clientInput.starts_with("/moveX")) {
+                    json moveX = json::parse(buf);
+
+                    client->player.setPlayerXLocation(moveX["Location"]["x"]);
+                    std::cout << "Client: Updated X position...\n";
+                } else if (clientInput.starts_with("/moveY")) {
+                    json moveY = json::parse(buf);
+
+                    client->player.setPlayerXLocation(moveY["Location"]["y"]);
+                    std::cout << "Client: Updated Y position...\n";
+                } else if (clientInput.starts_with("/moveZ")) {
+                    json moveZ = json::parse(buf);
+
+                    client->player.setPlayerXLocation(moveZ["Location"]["z"]);
+                    std::cout << "Client: Updated Z position...\n";
                 }
 
                 if (std::string(buf).compare("+OK Client QUIT") == 0) {
@@ -124,7 +173,7 @@ int main() {
                     break;
                 }
 
-                std::cout << buf << "\n";
+                std::cout << "From Server: " << buf << "\n";
             }
 
             if (FD_ISSET(client->fd, &fileDescSet)) {

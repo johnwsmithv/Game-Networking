@@ -29,7 +29,22 @@ void Player::updatePlayerZLocation(const int z)
     this->location.z += z;
 }
 
-void Player::updatePlayerHealth(const int health)
+void Player::setPlayerXLocation(const int x)
+{
+    this->location.x = x;
+}
+
+void Player::setPlayerYLocation(const int y)
+{
+    this->location.y = y;
+}
+
+void Player::setPlayerZLocation(const int z)
+{
+    this->location.z = z;
+}
+
+void Player::setPlayerHealth(const int health)
 {
     this->health = health;
 }

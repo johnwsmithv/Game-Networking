@@ -20,7 +20,12 @@ public:
     void updatePlayerXLocation(const int x);
     void updatePlayerYLocation(const int y);
     void updatePlayerZLocation(const int z);
-    void updatePlayerHealth(const int health);
+
+    void setPlayerXLocation(const int x);
+    void setPlayerYLocation(const int y);
+    void setPlayerZLocation(const int z);
+
+    void setPlayerHealth(const int health);
 private:
     int health;
     Location location;
