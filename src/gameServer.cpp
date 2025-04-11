@@ -82,6 +82,17 @@ std::string generateUUID() {
 }
 
 /**
+ * @brief Wrapper to the "sendto" function. This allows us to communicate to the Client.
+ * 
+ * @param serverFd The file descriptor of the socket which the server is going to be sending this data from.
+ * @param client The client information which we need to send this message to.
+ * @param message The message which we want to send.
+ */
+void sendToClient(int serverFd, const Client& client, const std::string& message) {
+    sendto(serverFd, message.c_str(), message.size(), 0, (struct sockaddr *)&(client.destination), sizeof(client.destination));
+}
+
+/**
  * @brief This function is a handling function for when the client
  * sends a message to this server.
  * 
@@ -136,17 +147,6 @@ int handleClientMessage(Server& thisServer, Client& client, const std::string& m
     }
 
     return 1;
-}
-
-/**
- * @brief Wrapper to the "sendto" function. This allows us to communicate to the Client.
- * 
- * @param serverFd The file descriptor of the socket which the server is going to be sending this data from.
- * @param client The client information which we need to send this message to.
- * @param message The message which we want to send.
- */
-void sendToClient(int serverFd, const Client& client, const std::string& message) {
-    sendto(serverFd, message.c_str(), message.size(), 0, (struct sockaddr *)&(client.destination), sizeof(client.destination));
 }
 
 // The key is going to be the players id which is going to come from the client,
