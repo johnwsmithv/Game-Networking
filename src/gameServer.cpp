@@ -170,33 +170,46 @@ int main() {
 
             sendToClient(thisServer.serverFd, client, initalJoin.dump());
         } else {
-            json fromClient = json::parse(receivedMsg);
-            if(fromClient.contains("Event")) {
-                if(fromClient["Event"] == "Quit") {
-                    // This means the client ended their session, so we want to remove them from the list
-                    // of active clients
-                    
-                    // This should be true, but check to be sure...
-                    if(thisServer.clients.find(senderIp) != thisServer.clients.end()) {
-                        std::cout << "Server: Client " << senderIp << " quitting. Removed from list.\n";
-                        thisServer.clients.erase(senderIp);
+            try {
+                json fromClient = json::parse(receivedMsg);
+                if(fromClient.contains("Event")) {
+                    if(fromClient["Event"] == "Quit") {
+                        // This means the client ended their session, so we want to remove them from the list
+                        // of active clients
+                        
+                        // This should be true, but check to be sure...
+                        if(thisServer.clients.find(senderIp) != thisServer.clients.end()) {
+                            std::cout << "Server: Client " << senderIp << " quitting. Removed from list.\n";
+                            thisServer.clients.erase(senderIp);
+                        }
+                    } else if(fromClient["Event"] == "Move_X") {
+                        client.player.updatePlayerXLocation(fromClient["Location"]["x"]);
+
+                        json updatedX = clientToJson(client);
+                        sendToClient(thisServer.serverFd, client, updatedX.dump());
+                    } else if(fromClient["Event"] == "Move_Y") {
+                        client.player.updatePlayerYLocation(fromClient["Location"]["y"]);
+
+                        json updatedY = clientToJson(client);
+                        sendToClient(thisServer.serverFd, client, updatedY.dump());
+                    } else if(fromClient["Event"] == "Move_Z") {
+                        client.player.updatePlayerZLocation(fromClient["Location"]["z"]);
+
+                        json updatedZ = clientToJson(client);
+                        sendToClient(thisServer.serverFd, client, updatedZ.dump());
+                    } else {
+                        std::cout << fromClient["Event"] << " is not yet implemented...";
                     }
-                } else if(fromClient["Event"] == "Move_X") {
-                    client.player.updatePlayerXLocation(fromClient["Location"]["x"]);
+                } else {
+                    json error;
+                    error["Error"] = "Bad input from client";
 
-                    json updatedX = clientToJson(client);
-                    sendToClient(thisServer.serverFd, client, updatedX.dump());
-                } else if(fromClient["Event"] == "Move_Y") {
-                    client.player.updatePlayerYLocation(fromClient["Location"]["y"]);
+                    sendToClient(thisServer.serverFd, client, error.dump());
 
-                    json updatedY = clientToJson(client);
-                    sendToClient(thisServer.serverFd, client, updatedY.dump());
-                } else if(fromClient["Event"] == "Move_Z") {
-                    client.player.updatePlayerZLocation(fromClient["Location"]["z"]);
-
-                    json updatedZ = clientToJson(client);
-                    sendToClient(thisServer.serverFd, client, updatedZ.dump());
+                    std::cout << "Bad input from client...\n";
                 }
+            } catch(std::exception& e) {
+                std::cout << "Server: An exception occurred :: " << e.what() << "\n";
             }
         }
     }

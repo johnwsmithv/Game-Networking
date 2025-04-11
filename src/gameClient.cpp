@@ -140,37 +140,36 @@ int main() {
                     continue;
                 }
 
-                if (clientInput.starts_with("/newPlayer")) {
-                    json initialState = json::parse(buf);
+                try {
+                    json bufFromServer = json::parse(buf);
 
-                    client->uuid = initialState["UUID"];
-                    client->player.setPlayerHealth(initialState["Health"]);
-                    client->player.updatePlayerXLocation(initialState["Location"]["x"]);
-                    client->player.updatePlayerYLocation(initialState["Location"]["y"]);
-                    client->player.updatePlayerZLocation(initialState["Location"]["z"]);
+                    if(bufFromServer.contains("Error")) {
+                        // This means we sent buf input to the server
+                        std::cerr << "Client: We sent a bad input to the server :: '" << bufFromServer["Error"] << "'\n";
+                        continue;
+                    }
 
-                    std::cout << "Updated player state:\n"
-                              << client << "\n";
-                } else if (clientInput.starts_with("/moveX")) {
-                    json moveX = json::parse(buf);
-
-                    client->player.setPlayerXLocation(moveX["Location"]["x"]);
-                    std::cout << "Client: Updated X position...\n";
-                } else if (clientInput.starts_with("/moveY")) {
-                    json moveY = json::parse(buf);
-
-                    client->player.setPlayerXLocation(moveY["Location"]["y"]);
-                    std::cout << "Client: Updated Y position...\n";
-                } else if (clientInput.starts_with("/moveZ")) {
-                    json moveZ = json::parse(buf);
-
-                    client->player.setPlayerXLocation(moveZ["Location"]["z"]);
-                    std::cout << "Client: Updated Z position...\n";
-                }
-
-                if (std::string(buf).compare("+OK Client QUIT") == 0) {
-                    std::cout << "Client: Closing connection with Server...\n";
-                    break;
+                    if (clientInput.starts_with("/newPlayer")) {
+                        client->uuid = bufFromServer["UUID"];
+                        client->player.setPlayerHealth(bufFromServer["Health"]);
+                        client->player.updatePlayerXLocation(bufFromServer["Location"]["x"]);
+                        client->player.updatePlayerYLocation(bufFromServer["Location"]["y"]);
+                        client->player.updatePlayerZLocation(bufFromServer["Location"]["z"]);
+    
+                        std::cout << "Updated player state:\n"
+                                  << client << "\n";
+                    } else if (clientInput.starts_with("/moveX")) {
+                        client->player.setPlayerXLocation(bufFromServer["Location"]["x"]);
+                        std::cout << "Client: Updated X position...\n";
+                    } else if (clientInput.starts_with("/moveY")) {
+                        client->player.setPlayerXLocation(bufFromServer["Location"]["y"]);
+                        std::cout << "Client: Updated Y position...\n";
+                    } else if (clientInput.starts_with("/moveZ")) {
+                        client->player.setPlayerXLocation(bufFromServer["Location"]["z"]);
+                        std::cout << "Client: Updated Z position...\n";
+                    }
+                } catch (std::exception& e) {
+                    std::cout << "Client: An exception occurred :: " << e.what() << "\n";
                 }
 
                 std::cout << "From Server: " << buf << "\n";
