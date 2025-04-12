@@ -1,12 +1,16 @@
 #include "Player.hpp"
 
 Player::Player(int health, Location location)
-    : health(health), location(location)
+    : health(health), location(location), currentGameId(-1)
 {}
 
 int Player::getPlayerHealth() const
 {
     return this->health;
+}
+
+int Player::getCurrentGameId() const {
+    return this->currentGameId;
 }
 
 Location Player::getPlayerLocation() const
@@ -47,4 +51,8 @@ void Player::setPlayerZLocation(const int z)
 void Player::setPlayerHealth(const int health)
 {
     this->health = health;
+}
+
+void Player::setGameId(const int currentGameId) {
+    this->currentGameId = currentGameId;
 }

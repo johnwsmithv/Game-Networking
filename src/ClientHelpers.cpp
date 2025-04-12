@@ -1,11 +1,40 @@
 #include "ClientHelpers.hpp"
 
 #include <limits> // std::numeric_limits, etc
-#include <cctype> // std::tolower
+#include <cctype> // std::tolower, std::isaslum
+#include <iostream> // std::cout, std::cerr
 
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
+
+/**
+ * @brief Checks to make sure that the input string has only alpha-numeric characters
+ * 
+ * @param str The string which we are checking
+ * @return true 
+ * @return false 
+ */
+bool isAlphanumeric(const std::string& str) {
+    for (char c : str) {
+        if (!std::isalnum(static_cast<unsigned char>(c))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void trim(std::string& str) {
+    while(!str.empty() && str.front() == ' ') {
+        str.erase(str.begin());
+    }
+
+    while(!str.empty() && str.back() == ' ') {
+        str.erase(str.end() - 1);
+    }
+
+    return;
+}
 
 std::string formattedMessageToServer(const std::string& userInput) {
     json toServer;
@@ -14,7 +43,7 @@ std::string formattedMessageToServer(const std::string& userInput) {
 
         return toServer.dump();
     } else if(userInput.starts_with("/moveX") || userInput.starts_with("/moveY") || userInput.starts_with("/moveZ")) {
-        const int idx = userInput.find_first_of(' ');
+        const size_t idx = userInput.find_first_of(' ');
 
         if(idx == std::string::npos) {
             return "";
@@ -60,6 +89,66 @@ std::string formattedMessageToServer(const std::string& userInput) {
         return toServer.dump();
     } else if(userInput.starts_with("/quit")) {
         toServer["Event"] = "Quit";
+
+        return toServer.dump();
+    } else if (userInput.starts_with("/changeUsername")) {
+        const size_t idx = userInput.find_first_of(' ');
+
+        if(idx == std::string::npos) {
+            return "";
+        }
+
+        std::string username = userInput.substr(idx + 1);
+
+        if(username.empty()) {
+            return "";
+        }
+
+        trim(username);
+
+        if(username.empty()) {
+            return "";
+        }
+
+        if(isAlphanumeric(username)) {
+            toServer["Event"] = "Change_Username";
+            toServer["Username"] = username;
+
+            return toServer.dump();
+        } else {
+            std::cerr << "Client Error: Username can only have alpha-numeric characters.\n";
+            return "";
+        }
+    }  else if (userInput.starts_with("/createGame")) {
+        const size_t idx = userInput.find_first_of(' ');
+
+        if(idx == std::string::npos) {
+            return "";
+        }
+
+        std::string gameName = userInput.substr(idx + 1);
+
+        if(gameName.empty()) {
+            return "";
+        }
+
+        trim(gameName);
+
+        if(gameName.empty()) {
+            return "";
+        }
+
+        if(isAlphanumeric(gameName)) {
+            toServer["Event"] = "Create_Game";
+            toServer["Game_Name"] = gameName;
+
+            return toServer.dump();
+        } else {
+            std::cerr << "Client Error: Your gamename alpha-numeric characters.\n";
+            return "";
+        }
+    } else if (userInput.starts_with("/listGames")) {
+        toServer["Event"] = "List_Games";
 
         return toServer.dump();
     } else {

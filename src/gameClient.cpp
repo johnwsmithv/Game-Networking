@@ -20,6 +20,7 @@ using json = nlohmann::json;
 struct Client {
     int fd;
     struct sockaddr_in server;
+    std::string username;
 
     std::string uuid;
     Player player;
@@ -167,6 +168,31 @@ int main() {
                     } else if (clientInput.starts_with("/moveZ")) {
                         client->player.setPlayerXLocation(bufFromServer["Location"]["z"]);
                         std::cout << "Client: Updated Z position...\n";
+                    } else if (clientInput.starts_with("/changeUsername")) {
+                        client->username = bufFromServer["Username"];
+                        std::cout << "Client: Updated Username...\n";
+                    } else if (clientInput.starts_with("/createGame")) {
+                        client->player.setGameId(bufFromServer["Game_ID"]);
+                        std::cout << "Client: Your game ID is " << client->player.getCurrentGameId() << "\n";
+                    } else if (clientInput.starts_with("/listGames")) {
+                        if(bufFromServer["Games"].is_array()) {
+                            std::cout << "Games:\n";
+
+                            if(bufFromServer["Games"].empty()) {
+                                std::cout << "\tThere are none currently. Make one!\n";
+                                continue;
+                            }
+
+                            auto gameIter = bufFromServer["Games"].begin();
+                            while(gameIter != bufFromServer["Games"].end()) {
+                                json game = *gameIter;
+
+                                std::cout << "\tGame ID = " << game["Game_ID"] << "\n"
+                                    << "\tGame Name = " << game["Game_Name"] << "\n"
+                                    << "\tNumber of Players = " << game["Number_Of_Players"] << "\n";
+                                gameIter++;
+                            }
+                        }
                     }
                 } catch (std::exception& e) {
                     std::cout << "Client: An exception occurred :: " << e.what() << "\n";

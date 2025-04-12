@@ -78,6 +78,59 @@ TEST(FormatMessageToServer, sneakyInputs) {
     EXPECT_EQ(outputz, "");
 }
 
+TEST(Trim, Empty_Input) {
+    std::string in = "";
+    trim(in);
+    EXPECT_EQ(in, "");
+}
+
+TEST(Trim, Spaces_Input) {
+    std::string in = "    ";
+    trim(in);
+    EXPECT_EQ(in, "");
+}
+
+TEST(Trim, Front_Spaces_Input) {
+    std::string in = "    abcd";
+    trim(in);
+    EXPECT_EQ(in, "abcd");
+}
+
+TEST(Trim, Back_Spaces_Input) {
+    std::string in = "abcd    ";
+    trim(in);
+    EXPECT_EQ(in, "abcd");
+}
+
+TEST(FormatMessageToServer, NonASCII_Username) {
+    ::testing::internal::CaptureStderr();
+
+    const auto output = formattedMessageToServer("/changeUsername 人口");
+
+    std::string errorMessage = ::testing::internal::GetCapturedStderr();
+
+    EXPECT_EQ(output, "");
+    EXPECT_EQ(errorMessage, "Client Error: Username can only have alpha-numeric characters.\n");
+}
+
+TEST(FormatMessageToServer, Username_With_Spaces) {
+    const auto output = formattedMessageToServer("/changeUsername   helloThere  ");
+
+    EXPECT_EQ(output, "{\"Event\":\"Change_Username\",\"Username\":\"helloThere\"}");
+}
+
+
+TEST(FormatMessageToServer, Username_With_Spaces_Between_Valid_Characters) {
+    ::testing::internal::CaptureStderr();
+
+    const auto output = formattedMessageToServer("/changeUsername   hello There  ");
+
+    std::string errorMessage = ::testing::internal::GetCapturedStderr();
+
+    EXPECT_EQ(output, "");
+    EXPECT_EQ(errorMessage, "Client Error: Username can only have alpha-numeric characters.\n");
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

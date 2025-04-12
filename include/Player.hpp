@@ -15,6 +15,7 @@ public:
     Player(int health, Location location);
 
     int getPlayerHealth() const;
+    int getCurrentGameId() const;
     Location getPlayerLocation() const;
 
     void updatePlayerXLocation(const int x);
@@ -26,7 +27,9 @@ public:
     void setPlayerZLocation(const int z);
 
     void setPlayerHealth(const int health);
+    void setGameId(const int currentGameId);
 private:
     int health;
     Location location;
+    int currentGameId;
 };

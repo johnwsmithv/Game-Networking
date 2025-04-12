@@ -20,6 +20,7 @@ using json = nlohmann::json;
 struct Client {
     struct sockaddr_in destination;
     std::string uuid;
+    std::string username;
 
     Player player;
 
@@ -27,6 +28,20 @@ struct Client {
         : player(Player(100, Location(0, 0, 0)))
     {}
 };
+
+struct Game {
+    int gameId;
+    std::string gameName;
+
+    // Each player is going to be represented by their UUID
+    std::vector<std::string> players;
+
+    Game(int gameId, const std::string& gameName, const std::vector<std::string>& players)
+        : gameId(gameId), gameName(gameName), players(players)
+    {}
+};
+
+std::unordered_map<int, std::unique_ptr<Game>> games;
 
 struct Server {
     std::string forwardingAddress;
@@ -49,6 +64,7 @@ struct Server {
 json clientToJson(const Client& client) {
     json clientJson;
     clientJson["UUID"] = client.uuid;
+    clientJson["Username"] = client.username;
     clientJson["Health"] = client.player.getPlayerHealth();
     clientJson["Location"] = {};
     clientJson["Location"]["x"] = client.player.getPlayerLocation().x;
@@ -79,6 +95,15 @@ std::string generateUUID() {
        << std::setw(12) << dis(gen);
 
     return ss.str();
+}
+
+int genRanNum() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    // TODO: Maybe allow an input of a min and max
+    std::uniform_int_distribution<> dist(1, 100);
+
+    return dist(gen);
 }
 
 /**
@@ -130,6 +155,38 @@ int handleClientMessage(Server& thisServer, Client& client, const std::string& m
 
                 json updatedZ = clientToJson(client);
                 sendToClient(thisServer.serverFd, client, updatedZ.dump());
+            } else if (fromClient["Event"] == "Change_Username") {
+                client.username = fromClient["Username"];
+
+                json updatedUsername = clientToJson(client);
+                sendToClient(thisServer.serverFd, client, updatedUsername.dump());
+            } else if (fromClient["Event"] == "Create_Game") {
+                // Generate a random game #
+                int gameNum = genRanNum();
+
+                // TODO: For now, there are only going to be 100 games
+                while(games.find(gameNum) != games.end()) {
+                    gameNum = genRanNum();
+                }
+
+                games[gameNum] = std::make_unique<Game>(gameNum, fromClient["Game_Name"], std::vector<std::string> {client.uuid});
+
+                json gameId;
+                gameId["Game_ID"] = gameNum;
+                sendToClient(thisServer.serverFd, client, gameId.dump());
+            } else if(fromClient["Event"] == "List_Games") {
+                json gamesJson;
+
+                gamesJson["Games"] = std::vector<json>();
+                for(const auto& [gameId, game] : games) {
+                    json gameJson;
+                    gameJson["Game_ID"] = gameId;
+                    gameJson["Game_Name"] = game->gameName;
+                    gameJson["Number_Of_Players"] = game->players.size();
+
+                    gamesJson["Games"].push_back(gameJson);
+                }
+                sendToClient(thisServer.serverFd, client, gamesJson.dump());
             } else {
                 std::cout << fromClient["Event"] << " is not yet implemented...";
             }
@@ -184,6 +241,9 @@ int main() {
 
         // The assignment specifies that the max we are going to receive is 1000
         // chars, but hey, let's make it a power of two!
+        // TODO: For now, messages coming from the client shouldn't exceed 1024 characters
+        //       but in the future, it may be wise to expand this to ensure we're getting
+        //       the entire message from the client.
         char buf[1024];
         memset(&buf, 0, sizeof(buf));
 
